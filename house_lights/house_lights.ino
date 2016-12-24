@@ -42,7 +42,7 @@
 // If the start address is for example 56, then the channels kept
 // by the dmx_slave object is channel 56-66
 //
-#define DMX_SLAVE_CHANNELS 4
+#define DMX_SLAVE_CHANNELS 2
 
 //
 // Pin number to change read or write mode on the shield
@@ -62,10 +62,16 @@ DMX_Slave dmx_slave ( DMX_SLAVE_CHANNELS );
 // the use the following line instead
 ///// DMX_Slave dmx_slave ( DMX_SLAVE_CHANNELS , RXEN_PIN );
 
-const int relPin0 = 7;
-const int relPin1 = 6;
-const int relPin2 = 5;
-const int relPin3 = 4;
+const int relPin0 = 3;
+const int relPin1 = 4;
+const int statPin = 13;
+
+unsigned long int statCount;
+
+// Frame rx callback to preset counter
+void gotDmx (unsigned short) {
+   statCount = 10000;
+}
 
 // the setup routine runs once when you press reset:
 void setup() {             
@@ -77,12 +83,17 @@ void setup() {
   // Set start address to 1, this is also the default setting
   // You can change this address at any time during the program
   dmx_slave.setStartAddress (500);
+
+  dmx_slave.onReceiveComplete ( gotDmx );
   
   // Set led pin as output pin
   pinMode ( relPin0, OUTPUT );
   pinMode ( relPin1, OUTPUT );
-  pinMode ( relPin2, OUTPUT );
-  pinMode ( relPin3, OUTPUT );
+  pinMode ( statPin, OUTPUT );
+
+  digitalWrite(relPin0, HIGH);
+  digitalWrite(relPin1, HIGH);
+  digitalWrite(statPin, HIGH);
 }
 
 // the loop routine runs over and over again forever:
@@ -97,33 +108,26 @@ void loop()
   // NOTE:
   // getChannelValue is relative to the configured startaddress
 
-  if ( dmx_slave.getChannelValue (1) > 127 ) { 
-    digitalWrite ( relPin0, HIGH );
-  }
-  else {
+  if ( dmx_slave.getChannelValue (1) > 127 && statCount > 0) { 
     digitalWrite ( relPin0, LOW );
   }
-
-  if ( dmx_slave.getChannelValue (2) > 127 ) { 
-    digitalWrite ( relPin1, HIGH );
-  }
   else {
+    digitalWrite ( relPin0, HIGH );
+  }
+
+  if ( dmx_slave.getChannelValue (2) > 127 && statCount > 0) { 
     digitalWrite ( relPin1, LOW );
   }
-
-  if ( dmx_slave.getChannelValue (3) > 127 ) { 
-    digitalWrite ( relPin2, HIGH );
-  }
   else {
-    digitalWrite ( relPin2, LOW );
+    digitalWrite ( relPin1, HIGH );
   }
-
-  if ( dmx_slave.getChannelValue (4) > 127 ) { 
-    digitalWrite ( relPin3, HIGH );
+  
+  if ( statCount > 0 ) {
+     digitalWrite(statPin, LOW);
+     statCount--;
   }
-  else {
-    digitalWrite ( relPin3, LOW );
-  }
+  else digitalWrite(statPin, HIGH);
+  //digitalWrite(statPin, LOW);
 
 }
 
