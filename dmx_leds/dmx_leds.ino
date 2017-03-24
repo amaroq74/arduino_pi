@@ -44,7 +44,8 @@
 // Configure a DMX slave controller
 DMX_Slave dmx_slave ( DMX_SLAVE_CHANNELS );
 
-const int ledPin  = 11;
+const int ledPin1  = 6;
+const int ledPin2  = 7;
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -53,7 +54,8 @@ const int ledPin  = 11;
 //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
 //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
 //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(60, ledPin, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip1 = Adafruit_NeoPixel(300, ledPin1, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel strip2 = Adafruit_NeoPixel(300, ledPin2, NEO_GRB + NEO_KHZ800);
 
 // the setup routine runs once when you press reset:
 void setup() {             
@@ -66,39 +68,38 @@ void setup() {
   // You can change this address at any time during the program
   dmx_slave.setStartAddress (400);
   
-  strip.begin();
-  strip.show();
+  strip1.begin();
+  strip1.show();
+  strip2.begin();
+  strip2.show();
 }
 
 void loop() {
-  uint8_t x;
+   uint8_t x;
 
-  // Get group a rgb
-  uint8_t  ar = dmx_slave.getChannelValue(1);
-  uint8_t  ag = dmx_slave.getChannelValue(2);
-  uint8_t  ab = dmx_slave.getChannelValue(3);
+   for (x=0;   x < 150;  x++) {
+      strip1.setPixelColor(x,dmx_slave.getChannelValue(1)+x, 
+                             dmx_slave.getChannelValue(2)+x, 
+                             dmx_slave.getChannelValue(3)+x);
 
-  // Get group b rgb
-  uint8_t  br = dmx_slave.getChannelValue(4);
-  uint8_t  bg = dmx_slave.getChannelValue(5);
-  uint8_t  bb = dmx_slave.getChannelValue(6);
+      strip2.setPixelColor(x,dmx_slave.getChannelValue(7)+x, 
+                             dmx_slave.getChannelValue(8)+x, 
+                             dmx_slave.getChannelValue(9)+x);
+   }
 
-  // Get group b rgb
-  uint8_t  cr = dmx_slave.getChannelValue(7);
-  uint8_t  cg = dmx_slave.getChannelValue(8);
-  uint8_t  cb = dmx_slave.getChannelValue(9);
+   for (x=150;  x < 300;  x++) {
+      strip1.setPixelColor(x,dmx_slave.getChannelValue(4)+x, 
+                             dmx_slave.getChannelValue(5)+x, 
+                             dmx_slave.getChannelValue(6)+x);
 
-  // Get group b rgb
-  uint8_t  dr = dmx_slave.getChannelValue(10);
-  uint8_t  dg = dmx_slave.getChannelValue(11);
-  uint8_t  db = dmx_slave.getChannelValue(12);
+      strip2.setPixelColor(x,dmx_slave.getChannelValue(10)+x, 
+                             dmx_slave.getChannelValue(11)+x, 
+                             dmx_slave.getChannelValue(12)+x);
+   }
 
-  for (x=0;  x < 15;  x++) strip.setPixelColor(x,ar,ag,ab);
-  for (x=15; x < 30; x++) strip.setPixelColor(x,br,bg,bb);
-  for (x=30; x < 45; x++) strip.setPixelColor(x,cr,cg,cb);
-  for (x=45; x < 60; x++) strip.setPixelColor(x,dr,dg,db);
-
-  strip.show();
-  delay(100);
+   strip1.show();
+   strip2.show();
+   delay(100);
 }
+
 
