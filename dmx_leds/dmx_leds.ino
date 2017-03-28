@@ -6,12 +6,13 @@
   #include <avr/power.h>
 #endif
 
-#define DMX_SLAVE_CHANNELS 5
+#define DMX_SLAVE_CHANNELS 6
 // Chan 0 = max
 // Chan 1 = red
 // Chan 2 = green
 // Chan 3 = blue
 // Chan 4 = mode
+// Chan 5 = center gap
 
 // Configure a DMX slave controller
 DMX_Slave dmx_slave ( DMX_SLAVE_CHANNELS );
@@ -64,23 +65,32 @@ void setPixel(uint16_t pixel, uint32_t color) {
    else strip2.setPixelColor(pixel-300,color);
 }
 
-void setAllPixels(uint32_t color) {
+void setAllPixels(uint32_t color, uint8_t gap) {
    uint16_t x;
    for ( x=0; x < 300; x++ ) {
-      strip1.setPixelColor(x,color);
-      strip2.setPixelColor(x,color);
+      if ( (300-x) >= gap ) strip1.setPixelColor(x,color);
+      else strip1.setPixelColor(x,0);
+      if ( x >= gap ) strip2.setPixelColor(x,color);
+      else strip2.setPixelColor(x,0);
    }
 }
 
-void setRainbow(uint8_t max,uint16_t shift) {
+void setRainbow(uint8_t max, uint16_t shift, uint8_t gap) {
    uint16_t pos;
    uint8_t  wpos;
+   uint16_t gmin;
+   uint16_t gmax;
    uint16_t x;
+
+   gmin = 300 - gap;
+   gmax = 300 + gap;
+
    for (x=0; x < 600; x++) {
       pos = (x + shift) % 600;
-      wpos = int(((float)pos / 599.0) * 255.0);
-     
-      setPixel(pos,Wheel(wpos,max));
+      wpos = int(((float)x / 599.0) * 255.0);
+
+      if ( (gap > 0) && ( (x > gmin) && (x < gmax)) ) setPixel(pos,0);
+      else setPixel(pos,Wheel(wpos,max));
    }
 }
 
@@ -107,20 +117,22 @@ void loop() {
    uint8_t green;
    uint8_t blue;
    uint8_t mode;
+   uint8_t gap;
 
    max   = dmx_slave.getChannelValue(1);
    red   = dmx_slave.getChannelValue(2);
    green = dmx_slave.getChannelValue(3);
    blue  = dmx_slave.getChannelValue(4);
    mode  = dmx_slave.getChannelValue(5);
+   gap   = dmx_slave.getChannelValue(6);
 
    if ( red   > max ) red   = max;
    if ( green > max ) green = max;
    if ( blue  > max ) blue  = max;
 
-   if ( mode < 10 ) setAllPixels(strip1.Color(red,green,blue));
-   else if ( mode < 100 ) setRainbow(max,0);
-   else setRainbow(max,(mode-100)*4);
+   if ( mode < 10 ) setAllPixels(strip1.Color(red,green,blue),gap);
+   else if ( mode < 100 ) setRainbow(max,0,gap);
+   else setRainbow(max,(mode-100)*4,gap);
 
    strip1.show();
    strip2.show();
