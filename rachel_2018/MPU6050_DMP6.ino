@@ -238,8 +238,11 @@ void setup() {
     pinMode(RPM_PIN, INPUT);
     lastRpm = 1;
     rpmCount = 0;
-}
 
+    *digitalPinToPCMSK(RPM_PIN) |= bit (digitalPinToPCMSKbit(RPM_PIN));  // enable pin
+    PCIFR  |= bit (digitalPinToPCICRbit(RPM_PIN)); // clear any outstanding interrupt
+    PCICR  |= bit (digitalPinToPCICRbit(RPM_PIN)); // enable interrupt for the group
+}
 
 
 // ================================================================
@@ -247,18 +250,12 @@ void setup() {
 // ================================================================
 
 void loop() {
-    uint8_t newRpm;
 
     // if programming failed, don't try to do anything
     if (!dmpReady) return;
 
     // wait for MPU interrupt or extra packet(s) available
-    while (!mpuInterrupt && fifoCount < packetSize) {
-        newRpm = digitalRead(RPM_PIN);
-
-        if ( newRpm == 0 and lastRpm == 1 ) rpmCount++;
-        lastRpm = newRpm;
-    }
+    while (!mpuInterrupt && fifoCount < packetSize) { }
 
     // reset interrupt flag and get INT_STATUS byte
     mpuInterrupt = false;
@@ -375,3 +372,11 @@ void loop() {
         digitalWrite(LED_PIN, blinkState);
     }
 }
+
+ISR (PCINT0_vect) {
+  uint8_t newRpm;
+  newRpm = digitalRead(RPM_PIN);
+  if ( newRpm == 0 and lastRpm == 1 ) rpmCount++;
+  lastRpm = newRpm;
+}
+
