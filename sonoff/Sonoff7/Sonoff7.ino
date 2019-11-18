@@ -54,7 +54,8 @@ char valueStr[50];
 unsigned long ledTime;
 
 // Macro for logging
-#define logPrintf(...) logUdp.beginPacket(logAddress,logPort); logUdp.printf(__VA_ARGS__); logUdp.endPacket();
+//#define logPrintf(...) logUdp.beginPacket(logAddress,logPort); logUdp.printf(__VA_ARGS__); logUdp.endPacket();
+#define logPrintf(...) ;
 
 int wifiPct() {
    long rssi = WiFi.RSSI();
