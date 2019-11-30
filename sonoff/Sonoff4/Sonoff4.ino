@@ -35,6 +35,7 @@ const unsigned int LedPeriod = 100;
 
 // Timers
 const unsigned long StatusPeriod = 60000; // 1 minute
+const unsigned long DmxTimeout   = 60000; // 1 minute
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -47,6 +48,8 @@ ArtnetReceiver artnet;
 unsigned int lastStatus = millis();
 unsigned int x;
 unsigned int currTime;
+
+unsigned long lastDmx;
 
 unsigned int outputLevel[OutputCount];
 
@@ -119,6 +122,7 @@ void dmxRx(uint8_t * data, uint16_t size) {
          }
       }
    }
+   lastDmx = millis();
 }
 
 // Initialize
@@ -228,6 +232,14 @@ void loop() {
 
    // LED Off
    if ( (currTime - ledTime) > LedPeriod ) digitalWrite(LedPin,HIGH);
+
+   if ( (currTime - lastDmx) > DmxTimeout ) {
+      for (x=0; x < OutputCount; x++) {
+         digitalWrite(OutputPin[x],HIGH);
+         outputLevel[x] = 1;
+      }
+      lastDmx = currTime;
+   }
 
    // Refresh digital values
 //   if ( (currTime - lastStatus) > StatusPeriod) {
