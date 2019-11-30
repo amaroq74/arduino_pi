@@ -40,7 +40,7 @@ const unsigned long StatusPeriod = 60000; // 1 minute
 
 // Variables
 WiFiClient espClient;
-PubSubClient client(espClient);
+//PubSubClient client(espClient);
 WiFiUDP logUdp;
 ArtnetReceiver artnet;
 
@@ -67,33 +67,33 @@ int wifiPct() {
 
 
 // MQTT Message Received
-void callback(char* topic, byte* payload, unsigned int length) {
-   digitalWrite(LedPin,LOW);
-   ledTime = millis();
-
-   for (x=0; x < OutputCount; x++) {
-
-      // Topic match
-      if ( strcmp(OutputCmndTopic[x],topic) == 0 ) {
-
-         // Turn On      
-         if ( length == 2 && strncmp((char *)payload,"ON",2) == 0 ) {
-            digitalWrite(OutputPin[x],HIGH);
-            client.publish(OutputStatTopic[x],"ON");
-            outputLevel[x] = 1;
-            logPrintf("Turning on relay %i",OutputPin[x])
-         }
-
-         // Turn Off
-         else if ( length == 3 && strncmp((char *)payload,"OFF",3) == 0 ) {
-            digitalWrite(OutputPin[x],LOW);
-            client.publish(OutputStatTopic[x],"OFF");
-            outputLevel[x] = 0;
-            logPrintf("Turning off relay %i",OutputPin[x])
-         }
-      }
-   }
-}
+//void callback(char* topic, byte* payload, unsigned int length) {
+//   digitalWrite(LedPin,LOW);
+//   ledTime = millis();
+//
+//   for (x=0; x < OutputCount; x++) {
+//
+//      // Topic match
+//      if ( strcmp(OutputCmndTopic[x],topic) == 0 ) {
+//
+//         // Turn On      
+//         if ( length == 2 && strncmp((char *)payload,"ON",2) == 0 ) {
+//            digitalWrite(OutputPin[x],HIGH);
+//            client.publish(OutputStatTopic[x],"ON");
+//            outputLevel[x] = 1;
+//            logPrintf("Turning on relay %i",OutputPin[x])
+//         }
+//
+//         // Turn Off
+//         else if ( length == 3 && strncmp((char *)payload,"OFF",3) == 0 ) {
+//            digitalWrite(OutputPin[x],LOW);
+//            client.publish(OutputStatTopic[x],"OFF");
+//            outputLevel[x] = 0;
+//            logPrintf("Turning off relay %i",OutputPin[x])
+//         }
+//      }
+//   }
+//}
 
 
 // DMX Frame Receiver
@@ -106,7 +106,7 @@ void dmxRx(uint8_t * data, uint16_t size) {
             logPrintf("Turning on relay %i",OutputPin[x])
             digitalWrite(LedPin,LOW);
             ledTime = millis();
-            client.publish(OutputStatTopic[x],"ON");
+            //client.publish(OutputStatTopic[x],"ON");
          }
       } else {
          if ( outputLevel[x] ) {
@@ -115,7 +115,7 @@ void dmxRx(uint8_t * data, uint16_t size) {
             logPrintf("Turning off relay %i",OutputPin[x])
             digitalWrite(LedPin,LOW);
             ledTime = millis();
-            client.publish(OutputStatTopic[x],"OFF");
+            //client.publish(OutputStatTopic[x],"OFF");
          }
       }
    }
@@ -174,13 +174,14 @@ void setup() {
 
    ArduinoOTA.begin();
 
-   client.setServer(mqtt_server, 1883);
-   client.setCallback(callback);
+   //client.setServer(mqtt_server, 1883);
+   //client.setCallback(callback);
 
    // Init relays
    for (x=0; x < OutputCount; x++) {
       pinMode(OutputPin[x],OUTPUT);
-      digitalWrite(OutputPin[x],LOW);
+      digitalWrite(OutputPin[x],HIGH);
+      outputLevel[x] = 1;
    }
 
    pinMode(LedPin,OUTPUT);
@@ -191,37 +192,37 @@ void setup() {
 }
 
 // MQTT Connect
-void reconnect() {
-
-   // Loop until we're reconnected
-   while (!client.connected()) {
-      logPrintf("Attempting MQTT connection...")
-
-      // Create a random client ID
-      String clientId = "ESP8266Client-";
-      clientId += String(random(0xffff), HEX);
-
-      // Attempt to connect
-      if (client.connect(clientId.c_str())) {
-         logPrintf("Connected to MQTT Server");
-
-         // Subscribe
-         for (x=0; x < OutputCount; x++) {
-            client.subscribe(OutputCmndTopic[x]);
-         }
-      } else {
-         logPrintf("Failed to connect to MQTT, waiting 5 seconds.")
-         delay(5000);
-      }
-   }
-}
+//void reconnect() {
+//
+//   // Loop until we're reconnected
+//   while (!client.connected()) {
+//      logPrintf("Attempting MQTT connection...")
+//
+//      // Create a random client ID
+//      String clientId = "ESP8266Client-";
+//      clientId += String(random(0xffff), HEX);
+//
+//      // Attempt to connect
+//      if (client.connect(clientId.c_str())) {
+//         logPrintf("Connected to MQTT Server");
+//
+//         // Subscribe
+//         for (x=0; x < OutputCount; x++) {
+//            client.subscribe(OutputCmndTopic[x]);
+//         }
+//      } else {
+//         logPrintf("Failed to connect to MQTT, waiting 5 seconds.")
+//         delay(5000);
+//      }
+//   }
+//}
 
 // Service Loop
 void loop() {
    ArduinoOTA.handle();
 
-   if (!client.connected()) reconnect();
-   client.loop();
+   //if (!client.connected()) reconnect();
+   //client.loop();
 
    currTime = millis();
 
@@ -229,16 +230,16 @@ void loop() {
    if ( (currTime - ledTime) > LedPeriod ) digitalWrite(LedPin,HIGH);
 
    // Refresh digital values
-   if ( (currTime - lastStatus) > StatusPeriod) {
-         if (outputLevel[x] == 1 ) 
-            client.publish(OutputStatTopic[x],"ON");
-         else
-            client.publish(OutputStatTopic[x],"OFF");
-         delay(10);
-      sprintf(valueStr,"%i",wifiPct());
-      logPrintf("Wifi strenth = %s",valueStr);
-      lastStatus = millis();
-   }
+//   if ( (currTime - lastStatus) > StatusPeriod) {
+//         if (outputLevel[x] == 1 ) 
+//            client.publish(OutputStatTopic[x],"ON");
+//         else
+//            client.publish(OutputStatTopic[x],"OFF");
+//         delay(10);
+//      sprintf(valueStr,"%i",wifiPct());
+//      logPrintf("Wifi strenth = %s",valueStr);
+//      lastStatus = millis();
+//   }
 
    artnet.parse();
 }

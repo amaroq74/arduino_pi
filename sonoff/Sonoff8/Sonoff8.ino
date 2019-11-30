@@ -180,7 +180,8 @@ void setup() {
    // Init relays
    for (x=0; x < OutputCount; x++) {
       pinMode(OutputPin[x],OUTPUT);
-      digitalWrite(OutputPin[x],LOW);
+      digitalWrite(OutputPin[x],HIGH);
+      outputLevel[x] = 1;
    }
 
    pinMode(LedPin,OUTPUT);
