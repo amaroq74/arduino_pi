@@ -9,6 +9,7 @@
 #define UNIT_NAME "sonoff2"
 #define OUT_COUNT 1
 #define DMX_BASE  401
+#define DMX_EN    399
 
 // Outputs
 const unsigned int OutputCount = OUT_COUNT;
@@ -27,7 +28,7 @@ const char * password    = "1er4idnfu345os3o283";
 unsigned int locPort     = 8112;
 unsigned int logPort     = 8111;
 const char * mqtt_server = "aliska.amaroq.net";
-IPAddress    logAddress (172,16,20,1);
+IPAddress    logAddress (172,16,20,2);
 
 // LED Pins
 const unsigned int LedPin    = 13;
@@ -57,8 +58,8 @@ char valueStr[50];
 unsigned long ledTime;
 
 // Macro for logging
-//#define logPrintf(...) logUdp.beginPacket(logAddress,logPort); logUdp.printf(__VA_ARGS__); logUdp.endPacket();
-#define logPrintf(...) ;
+#define logPrintf(...) logUdp.beginPacket(logAddress,logPort); logUdp.printf(__VA_ARGS__); logUdp.endPacket();
+//#define logPrintf(...) ;
 
 int wifiPct() {
    long rssi = WiFi.RSSI();
@@ -101,24 +102,39 @@ int wifiPct() {
 
 // DMX Frame Receiver
 void dmxRx(uint8_t * data, uint16_t size) {
-   for ( x = 0; x < OutputCount; x++ ) {
-      if ( data[DmxAddrs[x]-1] > 127 ) {
+
+   if ( data[DMX_EN-1] < 127 ) {
+      for ( x = 0; x < OutputCount; x++ ) {
          if ( ! outputLevel[x] ) {
             digitalWrite(OutputPin[x],HIGH);
             outputLevel[x] = 1;
             logPrintf("Turning on relay %i",OutputPin[x])
             digitalWrite(LedPin,LOW);
             ledTime = millis();
-            //client.publish(OutputStatTopic[x],"ON");
          }
-      } else {
-         if ( outputLevel[x] ) {
-            digitalWrite(OutputPin[x],LOW);
-            outputLevel[x] = 0;
-            logPrintf("Turning off relay %i",OutputPin[x])
-            digitalWrite(LedPin,LOW);
-            ledTime = millis();
-            //client.publish(OutputStatTopic[x],"OFF");
+      }
+   }
+
+   else {
+      for ( x = 0; x < OutputCount; x++ ) {
+         if ( data[DmxAddrs[x]-1] > 127 ) {
+            if ( ! outputLevel[x] ) {
+               digitalWrite(OutputPin[x],HIGH);
+               outputLevel[x] = 1;
+               logPrintf("Turning on relay %i",OutputPin[x])
+               digitalWrite(LedPin,LOW);
+               ledTime = millis();
+               //client.publish(OutputStatTopic[x],"ON");
+            }
+         } else {
+            if ( outputLevel[x] ) {
+               digitalWrite(OutputPin[x],LOW);
+               outputLevel[x] = 0;
+               logPrintf("Turning off relay %i",OutputPin[x])
+               digitalWrite(LedPin,LOW);
+               ledTime = millis();
+               //client.publish(OutputStatTopic[x],"OFF");
+            }
          }
       }
    }
@@ -242,16 +258,16 @@ void loop() {
    }
 
    // Refresh digital values
-//   if ( (currTime - lastStatus) > StatusPeriod) {
+   if ( (currTime - lastStatus) > StatusPeriod) {
 //         if (outputLevel[x] == 1 ) 
 //            client.publish(OutputStatTopic[x],"ON");
 //         else
 //            client.publish(OutputStatTopic[x],"OFF");
 //         delay(10);
-//      sprintf(valueStr,"%i",wifiPct());
-//      logPrintf("Wifi strenth = %s",valueStr);
-//      lastStatus = millis();
-//   }
+      sprintf(valueStr,"%i",wifiPct());
+      logPrintf("Wifi strenth = %s",valueStr);
+      lastStatus = millis();
+   }
 
    artnet.parse();
 }
