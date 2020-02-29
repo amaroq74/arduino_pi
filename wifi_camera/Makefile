@@ -1,0 +1,14 @@
+CHIP=esp32
+BOARD=esp32wrover
+UPLOAD_PORT=/dev/ttyACM0
+UPLOAD_SPEED=115200
+FLASH_DEF=1M0
+OTA_ADDR=172.16.20.85
+
+LIBS += $(ESP_LIBS)/WiFi 
+LIBS += $(ESP_LIBS)/ArduinoOTA 
+LIBS += $(ESP_LIBS)/ESPmDNS
+LIBS += $(ESP_LIBS)/Update
+
+include $(USER_LIB_PATH)/../makeEspArduino.mk
+
