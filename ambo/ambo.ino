@@ -4,17 +4,17 @@
 void setup()   {
   pinMode(OUTPIN, OUTPUT);
 
-  digitalWrite(OUTPIN, LOW);   // enable on
+  digitalWrite(OUTPIN, HIGH);
 
 }
 
 void loop() {
 
-  digitalWrite(OUTPIN, HIGH);   // enable on
+  digitalWrite(OUTPIN, LOW);
 
   delay(1000);
 
-  digitalWrite(OUTPIN, LOW);   // enable on
+  digitalWrite(OUTPIN, HIGH);
 
   delay(2000);
 }
