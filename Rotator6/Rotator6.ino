@@ -156,23 +156,12 @@ void save() {
   EEPROM.begin(1024);
   EEPROM.put(0, lsm.cal);
   EEPROM.commit();
-  if ( client ) {
-     SerialPort.println("-------------------- Stored Calibration ---------------------");
-     printCal();
-     SerialPort.println("-------------------------------------------------------------");
-  }
 }
 
 void restore() {
   //Restore the calibration data from EEPROM
   EEPROM.begin(1024);
   EEPROM.get(0, lsm.cal);
-
-  if ( client ) {
-     SerialPort.println("-------------------- Read Calibration -----------------------");
-     printCal();
-     SerialPort.println("-------------------------------------------------------------");
-  }
 }
 
 void printDebug(void) {
@@ -321,6 +310,7 @@ void processPosition() {
       azMot.halt(); //Stop the AZ motor
       elMot.halt(); //Stop the EL motor
       break;
+    default:
       lsm.getAzEl();  //Get the azimuth and elevation of the antenna                                                              //Get the antenna AZ and EL
       az = lsm.az;
       el = lsm.el;
