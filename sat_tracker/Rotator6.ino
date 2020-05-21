@@ -37,28 +37,9 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <EEPROM.h>
-
-#include <ESP8266WiFi.h>
-#include <ESP8266mDNS.h>
-#include <ArduinoOTA.h>
-
 #include "timer.h"
 #include "lsm.h"
 #include "mot.h"
-
-// Forward declarations
-void restore();
-void printCal(void);
-
-// Configuration
-const char * ssid        = "amaroq";
-const char * password    = "1er4idnfu345os3o283";
-
-unsigned int lastPrint;
-
-//Objects
-WiFiServer server(8192);
-WiFiClient client;
 
 //Constants
 //User configuration section:
@@ -68,19 +49,17 @@ const int MotorType = FWDREV;       //Please uncomment this line for the L298N D
 //const int MotorType = ACMOTR;     //Please uncomment this line for the triac AC motor driver.
 //const int SensorType = LSM303D;   //Please uncomment this line to use the LSM303D sensor.
 const int SensorType = LSM303DLHC;  //Please uncomment this line to use the LSM303DLHC sensor.
-//#define SerialPort Serial           //Please uncomment this line to use the USB port.
+#define SerialPort Serial           //Please uncomment this line to use the USB port.
 //#define SerialPort Serial1        //Please uncomment this line to use the TTL port.
-#define SerialPort client           //Please uncomment this line to use the TTL port.
 #define WINDUP_LIMIT 450            //Sets the total number of degrees azimuth rotation in any direction before resetting to zero
 //Motor pins - Don't change
-const int azFwdPin = 14;
-const int azRevPin = 12;
-const int elFwdPin = 0;
-const int elRevPin = 2;
-
+const int azFwdPin = 5;
+const int azRevPin = 6;
+const int elFwdPin = 9;
+const int elRevPin = 10;
 //Speaker pins
-const int gndPin = 13;    //Makes a convenient ground pin adjacent to the speaker pin
-const int spkPin = 15;    //Attach a piezo buzzer to this pin. It beeps when new calibration data arrives.
+const int gndPin = 14;    //Makes a convenient ground pin adjacent to the speaker pin
+const int spkPin = 16;    //Attach a piezo buzzer to this pin. It beeps when new calibration data arrives.
 //Motor drive gains. These set the amount of motor drive close to the set point
 const int azGain = 25;   //Azimuth motor gain
 const int elGain = 25;   //Elevation motor gain
@@ -110,6 +89,8 @@ float elError;          //Antenna elevation error
 float azInc;            //AZ increment for demo mode
 float elInc;            //EL increment for demo mode
 Modes mode;             //Rotator mode
+
+//Objects
 
 //Motor driver object: Mot xxMot(Driver-Type, Filter-Alpha, Gain, Fwd-Pin, Rev/Dir-Pin)
 Mot azMot(MotorType, azAlpha, azGain, azFwdPin, azRevPin); //AZ motor driver object
@@ -155,83 +136,60 @@ float diffAngle(float a, float b) {
 
 void save() {
   //Save the calibration data to EEPROM
-  EEPROM.begin(1024);
   EEPROM.put(0, lsm.cal);
-  EEPROM.commit();
 }
 
 void restore() {
   //Restore the calibration data from EEPROM
-  EEPROM.begin(1024);
   EEPROM.get(0, lsm.cal);
 }
 
 void printDebug(void) {
   //Print raw sensor data
-  if ( client ) {
-     if ( (millis() - lastPrint) > 500 ) {
-        SerialPort.print(lsm.mx); SerialPort.print(",");
-        SerialPort.print(lsm.my); SerialPort.print(",");
-        SerialPort.print(lsm.mz); SerialPort.print(",");
-        SerialPort.print(lsm.gx); SerialPort.print(",");
-        SerialPort.print(lsm.gy); SerialPort.print(",");
-        SerialPort.println(lsm.gz);
-        lastPrint = millis();
-      }
-   }
+  SerialPort.print(lsm.mx); SerialPort.print(",");
+  SerialPort.print(lsm.my); SerialPort.print(",");
+  SerialPort.print(lsm.mz); SerialPort.print(",");
+  SerialPort.print(lsm.gx); SerialPort.print(",");
+  SerialPort.print(lsm.gy); SerialPort.print(",");
+  SerialPort.println(lsm.gz);
 }
 
 void printCal(void) {
-  if ( client ) {
-     if ( (millis() - lastPrint) > 500 ) {
-        //Print the calibration data
-        SerialPort.print(lsm.cal.md, 1); SerialPort.print(",");
-        SerialPort.print(lsm.cal.me.i, 1); SerialPort.print(",");
-        SerialPort.print(lsm.cal.me.j, 1); SerialPort.print(",");
-        SerialPort.print(lsm.cal.me.k, 1); SerialPort.print(",");
-        SerialPort.print(lsm.cal.ge.i, 1); SerialPort.print(",");
-        SerialPort.print(lsm.cal.ge.j, 1); SerialPort.print(",");
-        SerialPort.print(lsm.cal.ge.k, 1); SerialPort.print(",");
-        SerialPort.print(lsm.cal.ms.i, 1); SerialPort.print(",");
-        SerialPort.print(lsm.cal.ms.j, 1); SerialPort.print(",");
-        SerialPort.print(lsm.cal.ms.k, 1); SerialPort.print(",");
-        SerialPort.print(lsm.cal.gs.i, 1); SerialPort.print(",");
-        SerialPort.print(lsm.cal.gs.j, 1); SerialPort.print(",");
-        SerialPort.println(lsm.cal.gs.k, 1);
-        lastPrint = millis();
-     }
-  }
+  //Print the calibration data
+  SerialPort.print(lsm.cal.md, 1); SerialPort.print(",");
+  SerialPort.print(lsm.cal.me.i, 1); SerialPort.print(",");
+  SerialPort.print(lsm.cal.me.j, 1); SerialPort.print(",");
+  SerialPort.print(lsm.cal.me.k, 1); SerialPort.print(",");
+  SerialPort.print(lsm.cal.ge.i, 1); SerialPort.print(",");
+  SerialPort.print(lsm.cal.ge.j, 1); SerialPort.print(",");
+  SerialPort.print(lsm.cal.ge.k, 1); SerialPort.print(",");
+  SerialPort.print(lsm.cal.ms.i, 1); SerialPort.print(",");
+  SerialPort.print(lsm.cal.ms.j, 1); SerialPort.print(",");
+  SerialPort.print(lsm.cal.ms.k, 1); SerialPort.print(",");
+  SerialPort.print(lsm.cal.gs.i, 1); SerialPort.print(",");
+  SerialPort.print(lsm.cal.gs.j, 1); SerialPort.print(",");
+  SerialPort.println(lsm.cal.gs.k, 1);
 }
 
 void printMon(float az, float el, float azSet, float elSet, float azWindup, float azError, float elError) {
-  if ( client ) {
-     if ( (millis() - lastPrint) > 500 ) {
-        //Print the monitor data
-        SerialPort.print(az, 0); SerialPort.print(",");
-        SerialPort.print(el, 0); SerialPort.print(",");
-        SerialPort.print(azSet, 0); SerialPort.print(",");
-        SerialPort.print(elSet, 0); SerialPort.print(",");
-        SerialPort.print(azWindup, 0); SerialPort.print(",");
-        SerialPort.print(windup); SerialPort.print(",");
-        SerialPort.print(azError, 0); SerialPort.print(",");
-        SerialPort.println(elError, 0);
-        lastPrint = millis();
-      }
-   }
+  //Print the monitor data
+  SerialPort.print(az, 0); SerialPort.print(",");
+  SerialPort.print(el, 0); SerialPort.print(",");
+  SerialPort.print(azSet, 0); SerialPort.print(",");
+  SerialPort.print(elSet, 0); SerialPort.print(",");
+  SerialPort.print(azWindup, 0); SerialPort.print(",");
+  SerialPort.print(windup); SerialPort.print(",");
+  SerialPort.print(azError, 0); SerialPort.print(",");
+  SerialPort.println(elError, 0);
 }
 
 void printAzEl() {
-  if ( client ) {
-     if ( (millis() - lastPrint) > 500 ) {
-        //Print the rotator feedback data in Easycomm II format
-        SerialPort.print("AZ");
-        SerialPort.print((az < 0) ? (az + 360) : az, 1);
-        SerialPort.print(" EL");
-        SerialPort.print(el, 1);
-        SerialPort.print("\n");
-        lastPrint = millis();
-     }
-  }
+  //Print the rotator feedback data in Easycomm II format
+  SerialPort.print("AZ");
+  SerialPort.print((az < 0) ? (az + 360) : az, 1);
+  SerialPort.print(" EL");
+  SerialPort.print(el, 1);
+  SerialPort.print("\n");
 }
 
 void calibrate() {
@@ -284,10 +242,8 @@ void getAzElDemo(float *azSet, float *elSet, float *azInc, float *elInc) {
   if (*elSet < 0.0) *elInc = -*elInc;
   *azSet += *azInc;
   *elSet += *elInc;
-  if ( client ) {
-     SerialPort.print(*azSet, 0); SerialPort.print(",");
-     SerialPort.println(*elSet, 0);
-  }
+  SerialPort.print(*azSet, 0); SerialPort.print(",");
+  SerialPort.println(*elSet, 0);
 }
 
 void getAzElError(float *azError, float *elError, bool *windup, float *azSet, float elSet, float az, float el) {
@@ -446,65 +402,41 @@ void processCommands(void) {
   //Process incoming data from the control computer
   //User commands are entered by the user and are terminated with a carriage return
   //Easycomm commands are generated by a tracking program and are terminated with a line feed
-
-  if (!client) client = server.available();
-
-  if (client) {
-     while (client.available() > 0) {
-       char ch = client.read();                                //Read a single character from the serial buffer
-       switch (ch) {
-         case 13:                                                  //Carriage return received
-           processUserCommands(line);                              //Process user commands
-           line = "";                                              //Command processed: Clear the command line
-           break;
-         case 10:                                                  //Line feed received
-           processEasycommCommands(line);                          //Process Easycomm commands
-           line = "";                                              //Command processed: Clear the command line
-           break;
-         default:                                                  //Any other character received
-           line += ch;                                             //Add this character to the command line
-           break;
-       }
-     }
+  while (SerialPort.available() > 0) {
+    char ch = SerialPort.read();                                //Read a single character from the serial buffer
+    switch (ch) {
+      case 13:                                                  //Carriage return received
+        processUserCommands(line);                              //Process user commands
+        line = "";                                              //Command processed: Clear the command line
+        break;
+      case 10:                                                  //Line feed received
+        processEasycommCommands(line);                          //Process Easycomm commands
+        line = "";                                              //Command processed: Clear the command line
+        break;
+      default:                                                  //Any other character received
+        line += ch;                                             //Add this character to the command line
+        break;
+    }
   }
 }
 
 void setup() {
-
-  // Start and connect to WIFI
-  WiFi.mode(WIFI_STA);
-  WiFi.setSleepMode(WIFI_NONE_SLEEP);
-  WiFi.begin(ssid, password);
-
-  while (WiFi.waitForConnectResult() != WL_CONNECTED) {
-      delay(5000);
-      ESP.restart();
-  }
-  delay(1000);
-
-  ArduinoOTA.begin();
-
-  server.begin();
-
+  //Initialize the system
   //Set speaker pins to outputs
   pinMode(spkPin, OUTPUT);
   pinMode(gndPin, OUTPUT);
   digitalWrite(gndPin, LOW);
   //Reset the rotator and load configuration from EEPROM
   reset(true);
-
-  //SerialPort.begin(9600);
+  //Initialize the serial port
+  SerialPort.begin(9600);
   //Initialize the sensor
   lsm.begin();
-
-  lastPrint = millis();
 }
 
 void loop() {
-  ArduinoOTA.handle();
   //Repeat continuously
   processCommands();                                              //Process commands from the control computer
   t1.execute(&processPosition);                                   //Process position only periodically
   processMotors();                                                //Process motor drive
 }
-

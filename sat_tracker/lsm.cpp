@@ -32,7 +32,7 @@ void Lsm::begin() {
 
 void Lsm::reset() {
   //Reset the sensor
-  Wire.begin(5,4);                                         //Initialize the I2C bus
+  Wire.begin();                                         //Initialize the I2C bus
   switch (_type) {
     case LSM303D:
       writeReg(LSM303D_ADDRESS, LSM303D_CTRL1, 0b01010111); //Acc output data rate = 50Hz all Acc axes enabled.

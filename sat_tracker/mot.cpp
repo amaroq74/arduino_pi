@@ -44,7 +44,6 @@ void Mot::_fwdrev(float err) {
   spd = fil.lpf(spd);
   //For L298N DC Motor H-Bridge Driver Boards
   //Set the motor speed
-  //
   if (abs(err) < 0.5) {
     analogWrite(_pin1, 0);
     analogWrite(_pin2, 0);
