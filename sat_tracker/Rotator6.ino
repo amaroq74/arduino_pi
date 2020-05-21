@@ -41,6 +41,10 @@
 #include "lsm.h"
 #include "mot.h"
 
+// Forward declarations
+void restore();
+void printCal();
+
 //Constants
 //User configuration section:
 //Please uncomment only one of each of the following MotorTypes, SensorTypes and SerialPort types:
@@ -49,8 +53,8 @@ const int MotorType = FWDREV;       //Please uncomment this line for the L298N D
 //const int MotorType = ACMOTR;     //Please uncomment this line for the triac AC motor driver.
 //const int SensorType = LSM303D;   //Please uncomment this line to use the LSM303D sensor.
 const int SensorType = LSM303DLHC;  //Please uncomment this line to use the LSM303DLHC sensor.
-#define SerialPort Serial           //Please uncomment this line to use the USB port.
-//#define SerialPort Serial1        //Please uncomment this line to use the TTL port.
+//#define SerialPort Serial           //Please uncomment this line to use the USB port.
+#define SerialPort Serial1        //Please uncomment this line to use the TTL port.
 #define WINDUP_LIMIT 450            //Sets the total number of degrees azimuth rotation in any direction before resetting to zero
 //Motor pins - Don't change
 const int azFwdPin = 5;
@@ -67,6 +71,8 @@ const int elGain = 25;   //Elevation motor gain
 const float azAlpha = 0.5; //Alpha value for AZ motor filter: Decrease to slow response time and reduce motor dither.
 const float elAlpha = 0.5; //Alpha value for EL motor filter: Decrease to slow response time and reduce motor dither.
 const float lsmAlpha = 0.05; //Alpha value for sensor filter: Decrease to slow response time and ease calibration process.
+
+const runPin = 8;
 
 //Modes
 enum Modes {tracking, monitoring, demonstrating, calibrating, debugging, pausing};    //Rotator controller modes
@@ -89,6 +95,7 @@ float elError;          //Antenna elevation error
 float azInc;            //AZ increment for demo mode
 float elInc;            //EL increment for demo mode
 Modes mode;             //Rotator mode
+bool runEnable;
 
 //Objects
 
@@ -293,8 +300,14 @@ void processPosition() {
 
 void processMotors() {
   //Drive the motors to reduce the azimuth and elevation error to zero
-  azMot.drive(azError);
-  elMot.drive(elError);
+  if ( runEnable ) {
+     azMot.drive(azError);
+     elMot.drive(elError);
+  }
+  else {
+      azMot.halt(); //Stop the AZ motor
+      elMot.halt(); //Stop the EL motor
+  }
 }
 
 void processUserCommands(String line) {
@@ -426,6 +439,10 @@ void setup() {
   pinMode(spkPin, OUTPUT);
   pinMode(gndPin, OUTPUT);
   digitalWrite(gndPin, LOW);
+
+  pinMode(runPin, INPUT);
+  digitalWrite(runPin, HIGH);
+
   //Reset the rotator and load configuration from EEPROM
   reset(true);
   //Initialize the serial port
@@ -436,6 +453,9 @@ void setup() {
 
 void loop() {
   //Repeat continuously
+
+  runEnable = digitalRead(runPin);
+
   processCommands();                                              //Process commands from the control computer
   t1.execute(&processPosition);                                   //Process position only periodically
   processMotors();                                                //Process motor drive
