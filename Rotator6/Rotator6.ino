@@ -54,6 +54,8 @@ void printCal(void);
 const char * ssid        = "amaroq";
 const char * password    = "1er4idnfu345os3o283";
 
+unsigned int lastPrint;
+
 //Objects
 WiFiServer server(8192);
 WiFiClient client;
@@ -167,56 +169,68 @@ void restore() {
 void printDebug(void) {
   //Print raw sensor data
   if ( client ) {
-     SerialPort.print(lsm.mx); SerialPort.print(",");
-     SerialPort.print(lsm.my); SerialPort.print(",");
-     SerialPort.print(lsm.mz); SerialPort.print(",");
-     SerialPort.print(lsm.gx); SerialPort.print(",");
-     SerialPort.print(lsm.gy); SerialPort.print(",");
-     SerialPort.println(lsm.gz);
+     if ( (millis() - lastPrint) > 500 ) {
+        SerialPort.print(lsm.mx); SerialPort.print(",");
+        SerialPort.print(lsm.my); SerialPort.print(",");
+        SerialPort.print(lsm.mz); SerialPort.print(",");
+        SerialPort.print(lsm.gx); SerialPort.print(",");
+        SerialPort.print(lsm.gy); SerialPort.print(",");
+        SerialPort.println(lsm.gz);
+        lastPrint = millis();
+      }
    }
 }
 
 void printCal(void) {
   if ( client ) {
-     //Print the calibration data
-     SerialPort.print(lsm.cal.md, 1); SerialPort.print(",");
-     SerialPort.print(lsm.cal.me.i, 1); SerialPort.print(",");
-     SerialPort.print(lsm.cal.me.j, 1); SerialPort.print(",");
-     SerialPort.print(lsm.cal.me.k, 1); SerialPort.print(",");
-     SerialPort.print(lsm.cal.ge.i, 1); SerialPort.print(",");
-     SerialPort.print(lsm.cal.ge.j, 1); SerialPort.print(",");
-     SerialPort.print(lsm.cal.ge.k, 1); SerialPort.print(",");
-     SerialPort.print(lsm.cal.ms.i, 1); SerialPort.print(",");
-     SerialPort.print(lsm.cal.ms.j, 1); SerialPort.print(",");
-     SerialPort.print(lsm.cal.ms.k, 1); SerialPort.print(",");
-     SerialPort.print(lsm.cal.gs.i, 1); SerialPort.print(",");
-     SerialPort.print(lsm.cal.gs.j, 1); SerialPort.print(",");
-     SerialPort.println(lsm.cal.gs.k, 1);
+     if ( (millis() - lastPrint) > 500 ) {
+        //Print the calibration data
+        SerialPort.print(lsm.cal.md, 1); SerialPort.print(",");
+        SerialPort.print(lsm.cal.me.i, 1); SerialPort.print(",");
+        SerialPort.print(lsm.cal.me.j, 1); SerialPort.print(",");
+        SerialPort.print(lsm.cal.me.k, 1); SerialPort.print(",");
+        SerialPort.print(lsm.cal.ge.i, 1); SerialPort.print(",");
+        SerialPort.print(lsm.cal.ge.j, 1); SerialPort.print(",");
+        SerialPort.print(lsm.cal.ge.k, 1); SerialPort.print(",");
+        SerialPort.print(lsm.cal.ms.i, 1); SerialPort.print(",");
+        SerialPort.print(lsm.cal.ms.j, 1); SerialPort.print(",");
+        SerialPort.print(lsm.cal.ms.k, 1); SerialPort.print(",");
+        SerialPort.print(lsm.cal.gs.i, 1); SerialPort.print(",");
+        SerialPort.print(lsm.cal.gs.j, 1); SerialPort.print(",");
+        SerialPort.println(lsm.cal.gs.k, 1);
+        lastPrint = millis();
+     }
   }
 }
 
 void printMon(float az, float el, float azSet, float elSet, float azWindup, float azError, float elError) {
   if ( client ) {
-     //Print the monitor data
-     SerialPort.print(az, 0); SerialPort.print(",");
-     SerialPort.print(el, 0); SerialPort.print(",");
-     SerialPort.print(azSet, 0); SerialPort.print(",");
-     SerialPort.print(elSet, 0); SerialPort.print(",");
-     SerialPort.print(azWindup, 0); SerialPort.print(",");
-     SerialPort.print(windup); SerialPort.print(",");
-     SerialPort.print(azError, 0); SerialPort.print(",");
-     SerialPort.println(elError, 0);
+     if ( (millis() - lastPrint) > 500 ) {
+        //Print the monitor data
+        SerialPort.print(az, 0); SerialPort.print(",");
+        SerialPort.print(el, 0); SerialPort.print(",");
+        SerialPort.print(azSet, 0); SerialPort.print(",");
+        SerialPort.print(elSet, 0); SerialPort.print(",");
+        SerialPort.print(azWindup, 0); SerialPort.print(",");
+        SerialPort.print(windup); SerialPort.print(",");
+        SerialPort.print(azError, 0); SerialPort.print(",");
+        SerialPort.println(elError, 0);
+        lastPrint = millis();
+      }
    }
 }
 
 void printAzEl() {
   if ( client ) {
-     //Print the rotator feedback data in Easycomm II format
-     SerialPort.print("AZ");
-     SerialPort.print((az < 0) ? (az + 360) : az, 1);
-     SerialPort.print(" EL");
-     SerialPort.print(el, 1);
-     SerialPort.print("\n");
+     if ( (millis() - lastPrint) > 500 ) {
+        //Print the rotator feedback data in Easycomm II format
+        SerialPort.print("AZ");
+        SerialPort.print((az < 0) ? (az + 360) : az, 1);
+        SerialPort.print(" EL");
+        SerialPort.print(el, 1);
+        SerialPort.print("\n");
+        lastPrint = millis();
+     }
   }
 }
 
@@ -482,6 +496,8 @@ void setup() {
   //SerialPort.begin(9600);
   //Initialize the sensor
   lsm.begin();
+
+  lastPrint = millis();
 }
 
 void loop() {
