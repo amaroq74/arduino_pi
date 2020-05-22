@@ -72,7 +72,7 @@ const float azAlpha = 0.5; //Alpha value for AZ motor filter: Decrease to slow r
 const float elAlpha = 0.5; //Alpha value for EL motor filter: Decrease to slow response time and reduce motor dither.
 const float lsmAlpha = 0.05; //Alpha value for sensor filter: Decrease to slow response time and ease calibration process.
 
-const runPin = 8;
+const int runPin = 8;
 
 //Modes
 enum Modes {tracking, monitoring, demonstrating, calibrating, debugging, pausing};    //Rotator controller modes
@@ -454,7 +454,7 @@ void setup() {
 void loop() {
   //Repeat continuously
 
-  runEnable = digitalRead(runPin);
+  runEnable = (digitalRead(runPin) != 0);
 
   processCommands();                                              //Process commands from the control computer
   t1.execute(&processPosition);                                   //Process position only periodically
