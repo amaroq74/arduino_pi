@@ -97,7 +97,7 @@ float elInc;            //EL increment for demo mode
 Modes mode;             //Rotator mode
 bool runEnable;
 bool swEnable;
-unsigned int swTime;
+unsigned long swTime;
 
 //Objects
 
@@ -374,6 +374,8 @@ void processUserCommands(String line) {
       SerialPort.println("m -Monitor");
       SerialPort.println("p -Pause");
       SerialPort.println("u -Sw refresh");
+      SerialPort.println("x -Sw stop");      
+      SerialPort.println("v -Go Vertical");
       break;
     case 'p':                                             //Pause command
       if (mode == pausing) {
@@ -384,15 +386,25 @@ void processUserCommands(String line) {
       }
       break;
     case 'u':                                             //Pause command
-       if ( ! swEnable ) SerialPort.println("Sw start");
+       SerialPort.println("Sw start");
        swEnable = 1;
        swTime = millis();
-    default:                                              //Process type 2 user commands
+       break;
+    case 'x':                                             //Pause command
+       SerialPort.println("Sw stop");
+       swEnable = 0;
+       break;
+    case 'v':
+        azSet = 0.0;
+        elSet = 90.0;
+        break;
+    case 'n':                                              //Process type 2 user commands
       firstSpace = line.indexOf(' ');                     //Get the index of the first space
       param = line.substring(0, firstSpace);              //Get the first parameter
       azSet = param.toFloat();                            //Get the azSet value
       param = line.substring(firstSpace + 1);             //Get the second parameter
       elSet = param.toFloat();                            //Get the elSet value
+      break;
   }
 }
 
@@ -413,11 +425,11 @@ void processEasycommCommands(String line) {
       azSet = param.toFloat();                            //Set the azSet value
       if (azSet > 180) azSet = azSet - 360;               //Convert 0..360 to -180..180 degrees format
       param = line.substring(firstSpace + 3, secondSpace);//Get the second parameter
-      elSet = param.toFloat();                            //Set the elSet value
+      elSet = param.toFloat();     
+      if ( ! swEnable ) SerialPort.println("Sw start");
+      swEnable = 1;
+      swTime = millis();//Set the elSet value
     }
-    if ( ! swEnable ) SerialPort.println("Sw start");
-    swEnable = 1;
-    swTime = millis();
   }
 }
 
@@ -469,8 +481,8 @@ void loop() {
   runEnable = (digitalRead(runPin) != 0);
 
   if ( ( millis() - swTime ) > 60000 ) {
+    if ( swEnable ) SerialPort.println("Sw stop");
     swEnable = 0;
-    SerialPort.println("Sw stop");
   }
 
   processCommands();                                              //Process commands from the control computer
