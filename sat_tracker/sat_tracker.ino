@@ -65,8 +65,8 @@ const int elRevPin = 10;
 const int gndPin = 14;    //Makes a convenient ground pin adjacent to the speaker pin
 const int spkPin = 16;    //Attach a piezo buzzer to this pin. It beeps when new calibration data arrives.
 //Motor drive gains. These set the amount of motor drive close to the set point
-const int azGain = 25;   //Azimuth motor gain
-const int elGain = 25;   //Elevation motor gain
+const int azGain = 50;   //Azimuth motor gain
+const int elGain = 50;   //Elevation motor gain
 //Filter constants
 const float azAlpha = 0.5; //Alpha value for AZ motor filter: Decrease to slow response time and reduce motor dither.
 const float elAlpha = 0.5; //Alpha value for EL motor filter: Decrease to slow response time and reduce motor dither.
@@ -96,6 +96,8 @@ float azInc;            //AZ increment for demo mode
 float elInc;            //EL increment for demo mode
 Modes mode;             //Rotator mode
 bool runEnable;
+bool swEnable;
+unsigned int swTime;
 
 //Objects
 
@@ -300,7 +302,7 @@ void processPosition() {
 
 void processMotors() {
   //Drive the motors to reduce the azimuth and elevation error to zero
-  if ( runEnable ) {
+  if ( runEnable && swEnable ) {
      azMot.drive(azError);
      elMot.drive(elError);
   }
@@ -371,6 +373,7 @@ void processUserCommands(String line) {
       SerialPort.println("b -Debug");
       SerialPort.println("m -Monitor");
       SerialPort.println("p -Pause");
+      SerialPort.println("u -Sw refresh");
       break;
     case 'p':                                             //Pause command
       if (mode == pausing) {
@@ -380,6 +383,10 @@ void processUserCommands(String line) {
         SerialPort.println("Paused");
       }
       break;
+    case 'u':                                             //Pause command
+       if ( ! swEnable ) SerialPort.println("Sw start");
+       swEnable = 1;
+       swTime = millis();
     default:                                              //Process type 2 user commands
       firstSpace = line.indexOf(' ');                     //Get the index of the first space
       param = line.substring(0, firstSpace);              //Get the first parameter
@@ -408,6 +415,9 @@ void processEasycommCommands(String line) {
       param = line.substring(firstSpace + 3, secondSpace);//Get the second parameter
       elSet = param.toFloat();                            //Set the elSet value
     }
+    if ( ! swEnable ) SerialPort.println("Sw start");
+    swEnable = 1;
+    swTime = millis();
   }
 }
 
@@ -443,6 +453,8 @@ void setup() {
   pinMode(runPin, INPUT);
   digitalWrite(runPin, HIGH);
 
+  swEnable = 0;
+
   //Reset the rotator and load configuration from EEPROM
   reset(true);
   //Initialize the serial port
@@ -455,6 +467,11 @@ void loop() {
   //Repeat continuously
 
   runEnable = (digitalRead(runPin) != 0);
+
+  if ( ( millis() - swTime ) > 60000 ) {
+    swEnable = 0;
+    SerialPort.println("Sw stop");
+  }
 
   processCommands();                                              //Process commands from the control computer
   t1.execute(&processPosition);                                   //Process position only periodically
