@@ -9,7 +9,6 @@ const char * ssid        = "amaroq";
 const char * password    = "1er4idnfu345os3o283";
 
 const float azAdj = 10.0;
-const float elAdj = 0.0;
 
 WiFiServer dbgServer(8192);
 WiFiClient dbgClient;
@@ -94,8 +93,10 @@ void loop() {
 
             // Position set
             if ( ret == 3 && strcmp(mark,"P") == 0 ) {
+               el = atof(val1);
+
                az = atof(val0) + azAdj;
-               el = atof(val1) + elAdj;
+               if ( az >= 360 ) az -= 360;
 
                Serial.print("AZ");
                Serial.print(az,2);
@@ -146,8 +147,10 @@ void loop() {
 
             // Position set
             if ( ret == 2 ) {
+               el = atof(val1);
+
                az = atof(val0) - azAdj;
-               el = atof(val1) - elAdj;
+               if ( az < 0 ) az += 360;
 
                rotClient.println(az);
                rotClient.println(el);

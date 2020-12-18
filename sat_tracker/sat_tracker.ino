@@ -374,7 +374,7 @@ void processUserCommands(String line) {
       SerialPort.println("m -Monitor");
       SerialPort.println("p -Pause");
       SerialPort.println("u -Sw refresh");
-      SerialPort.println("x -Sw stop");      
+      SerialPort.println("x -Sw stop");
       SerialPort.println("v -Go Vertical");
       break;
     case 'p':                                             //Pause command
@@ -425,7 +425,7 @@ void processEasycommCommands(String line) {
       azSet = param.toFloat();                            //Set the azSet value
       if (azSet > 180) azSet = azSet - 360;               //Convert 0..360 to -180..180 degrees format
       param = line.substring(firstSpace + 3, secondSpace);//Get the second parameter
-      elSet = param.toFloat();     
+      elSet = param.toFloat();
       if ( ! swEnable ) SerialPort.println("Sw start");
       swEnable = 1;
       swTime = millis();//Set the elSet value
