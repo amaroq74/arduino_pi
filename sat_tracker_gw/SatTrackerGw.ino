@@ -30,11 +30,23 @@ char val1[20];
 
 int32_t ret;
 
-double az;
-double el;
+double req_az;
+double req_el;
+double rot_az;
+double rot_el;
+double got_az;
+double got_el;
+
+String retStr;
 
 // Initialize
 void setup() {
+   req_az = 0.0;
+   req_el = 90.0;
+   rot_az = 0.0;
+   rot_el = 0.0;
+   got_az = 0.0;
+   got_el = 90.0;
 
    // Start and connect to WIFI
    WiFi.mode(WIFI_STA);
@@ -93,26 +105,27 @@ void loop() {
 
             // Position set
             if ( ret == 3 && strcmp(mark,"P") == 0 ) {
-               el = atof(val1);
+               req_el = atof(val1);
+               req_az = atof(val0);
 
-               az = atof(val0) + azAdj;
-               if ( az >= 360 ) az -= 360;
+               rot_el = req_el;
+               rot_az = req_az + azAdj;
+
+               if ( rot_az >= 360 ) rot_az -= 360;
 
                Serial.print("AZ");
-               Serial.print(az,2);
+               Serial.print(rot_az,2);
                Serial.print(" EL");
-               Serial.print(el,2);
+               Serial.print(rot_el,2);
                Serial.print("\n");
 
-               if ( rotClient ) {
-                  rotClient.print("RPRT 0\n");
-               }
+               rotClient.print("RPRT 0\n");
 
                if ( dbgClient ) {
-                  dbgClient.print("Request: ");
-                  dbgClient.print(az);
+                  dbgClient.print("Req: ");
+                  dbgClient.print(req_az);
                   dbgClient.print(" ");
-                  dbgClient.println(el);
+                  dbgClient.println(req_el);
                }
             }
 
@@ -121,10 +134,23 @@ void loop() {
                Serial.print("AZ EL\n");
             }
 
-            else {
-               if ( rotClient ) {
-                  rotClient.print("RPRT -1\n");
+            // Stop, Park or quite
+            else if ( ret == 1 && ( strcmp(mark,"S") == 0 ||
+                                    strcmp(mark,"K") == 0 ||
+                                    strcmp(mark,"q") == 0 ) ) {
+
+               if ( dbgClient ) {
+                  dbgClient.print("CMD: ");
+                  dbgClient.print(rotBuffer);
                }
+               Serial.print("u\r");
+               Serial.print("v\r");
+               Serial.print("\n");
+               rotClient.print("RPRT 0\n");
+            }
+
+            else {
+               rotClient.print("RPRT -1\n");
             }
             rotCount = 0;
             rotBuffer[0] = 0;
@@ -147,13 +173,27 @@ void loop() {
 
             // Position set
             if ( ret == 2 ) {
-               el = atof(val1);
+               got_el = atof(val1);
 
-               az = atof(val0) - azAdj;
-               if ( az < 0 ) az += 360;
+               got_az = atof(val0) - azAdj;
+               if ( got_az < 0 ) got_az += 360;
 
-               rotClient.println(az);
-               rotClient.println(el);
+               if ( dbgClient ) {
+                  dbgClient.print("Tar: ");
+                  dbgClient.print(req_az,6);
+                  dbgClient.print(" ");
+                  dbgClient.println(req_el,6);
+                  dbgClient.print("Got: ");
+                  dbgClient.print(got_az,6);
+                  dbgClient.print(" ");
+                  dbgClient.println(got_el,6);
+               }
+
+               retStr = String(got_az,6);
+               retStr += String("\n");
+               retStr += String(got_el,6);
+               retStr += String("\n");
+               rotClient.write(retStr.c_str());
             }
          }
 
