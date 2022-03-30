@@ -72,6 +72,8 @@ const float azAlpha = 0.5; //Alpha value for AZ motor filter: Decrease to slow r
 const float elAlpha = 0.5; //Alpha value for EL motor filter: Decrease to slow response time and reduce motor dither.
 const float lsmAlpha = 0.05; //Alpha value for sensor filter: Decrease to slow response time and ease calibration process.
 
+
+
 const int runPin = 8;
 
 //Modes
